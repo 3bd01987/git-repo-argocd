@@ -1,10 +1,26 @@
-name: Hello Workflow
+name: Helm Chart Validation CI
 
 on: [push]
 
 jobs:
-  greet:
+  validate_helm_chart:
     runs-on: ubuntu-latest
     steps:
-      - name: Say Hello
-        run: echo "Hello from GitHub Actions!"
+      - name: 1. Checkout repository code
+        uses: actions/checkout@v4 # Updated to v4 for latest version
+
+      - name: 2. Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+
+      - name: 3. Lint Helm Chart Syntax
+        run: helm lint ./nginx-chart
+
+      - name: 4. Template and Dry-Run Install
+        # This is the step that should fail due to bad YAML structure
+        run: helm install nginx-test ./nginx-chart --dry-run --debug
+
+      - name: 5. Final Status
+        if: success()
+        run: echo "SUCCESS! Helm chart is valid and ready for deployment by Argo CD."
